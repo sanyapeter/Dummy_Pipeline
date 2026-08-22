@@ -1,8 +1,5 @@
 name: CI Pipeline
 
-# Trigger on every push, and also allow manually picking a failure mode
-# from the GitHub Actions "Run workflow" button -- this is how you demo
-# each failure type live without editing code each time.
 on:
   push:
     branches: [main]
@@ -62,3 +59,26 @@ jobs:
           else
             echo "Deploy OK"
           fi
+
+      - name: Capture full job log
+        if: always()
+        run: |
+          echo "Pipeline: ${{ github.run_id }}" > pipeline_log.txt
+          echo "Commit: ${{ github.sha }}" >> pipeline_log.txt
+          echo "Status: ${{ job.status }}" >> pipeline_log.txt
+          echo "Repo: ${{ github.repository }}" >> pipeline_log.txt
+          echo "Break mode: ${{ env.BREAK_MODE }}" >> pipeline_log.txt
+
+      - name: Configure AWS credentials
+        if: always()
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: Upload log to S3
+        if: always()
+        run: |
+          aws s3 cp pipeline_log.txt \
+            s3://${{ secrets.AWS_S3_BUCKET }}/logs/${{ github.run_id }}.txt
