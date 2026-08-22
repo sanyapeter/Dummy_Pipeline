@@ -1,0 +1,14 @@
+{
+  "event_id": "evt-005",
+  "pipeline_id": "128",
+  "timestamp": "2026-08-22T15:02:55Z",
+  "source": "github_actions",
+  "status": "PASSED",
+  "stage": "DEPLOY",
+  "error": null,
+  "commit": "e28f014",
+  "changed_files": ["terraform/main.tf"],
+  "category": "risky_change",
+  "risky": true,
+  "risk_reason": "IAM policy uses wildcard Action 'iam:*' and Resource '*'; security group open to 0.0.0.0/0 on ports 0-65535"
+}

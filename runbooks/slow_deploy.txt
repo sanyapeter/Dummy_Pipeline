@@ -1,0 +1,8 @@
+TITLE: Deploy health check timeout
+SYMPTOM: Deploy step hangs and then fails with a health-check-timeout style message
+COMMON CAUSE: The app is taking too long to become healthy -- often a slow startup (large migration, cold cache warm-up) or the health check endpoint itself is misconfigured
+ROOT CAUSE CHECK: Look at how long the app took to respond vs the configured timeout. If it's close to the limit, it may just need a longer timeout. If it never responds, the health check endpoint or startup logic is likely broken.
+FIX (short-term): Increase the deploy health-check timeout threshold.
+FIX (real fix): Investigate and speed up app startup, or fix the health check endpoint.
+SEVERITY: Medium
+RISK TO AUTO-APPLY FIX: Medium -- increasing a timeout value is low-risk and can be auto-applied; changing startup/health-check code should go to a human.

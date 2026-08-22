@@ -1,0 +1,13 @@
+{
+  "event_id": "evt-002",
+  "pipeline_id": "125",
+  "timestamp": "2026-08-22T14:20:47Z",
+  "source": "github_actions",
+  "status": "FAILED",
+  "stage": "TEST",
+  "error": "AssertionError: assert add(2, 2) == 5, expected 5 (intentionally wrong) to trigger BREAK_MODE=failing_test",
+  "commit": "b91e42d",
+  "changed_files": ["tests/test_app.py"],
+  "category": "direct_failure",
+  "risky": false
+}

@@ -1,0 +1,7 @@
+TITLE: Overly broad IAM policy or security group change
+SYMPTOM: Pipeline PASSES (terraform plan/apply succeeds), but the diff includes an IAM policy with wildcard actions/resources ("iam:*", "Resource": "*") or a security group open to 0.0.0.0/0 on a wide port range
+COMMON CAUSE: Developer used a wildcard permission during initial development to "get it working" and never scoped it down before merging
+ROOT CAUSE CHECK: Scan the terraform diff for "*" in Action/Resource fields on iam_policy resources, or 0.0.0.0/0 combined with a broad port range on security groups.
+FIX: Scope the IAM policy to only the specific actions/resources the app needs. Restrict the security group to specific ports and known IP ranges.
+SEVERITY: High (security risk) even though the pipeline technically passed.
+RISK TO AUTO-APPLY FIX: This should NEVER be auto-applied. Always route to human approval -- these changes affect production security posture.

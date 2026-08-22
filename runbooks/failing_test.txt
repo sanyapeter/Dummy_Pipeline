@@ -1,0 +1,7 @@
+TITLE: Unit test assertion failure during TEST stage
+SYMPTOM: pytest reports AssertionError with expected vs actual values shown in the log
+COMMON CAUSE: Either the test has a wrong expected value (test bug) or the code change actually broke behavior (real regression)
+ROOT CAUSE CHECK: Diff the failing test against the last passing commit. If the test file itself changed and the assertion looks miscalculated, it's likely a test bug. If only the source file changed, it's likely a real regression.
+FIX: If test bug -> correct the expected value in the test. If real regression -> revert or fix the source change that broke the behavior.
+SEVERITY: Medium
+RISK TO AUTO-APPLY FIX: Medium -- do NOT auto-apply a fix that changes test expectations without flagging it, since that could mask a real regression. Always request human approval when the fix touches test assertions.

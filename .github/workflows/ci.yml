@@ -1,0 +1,64 @@
+name: CI Pipeline
+
+# Trigger on every push, and also allow manually picking a failure mode
+# from the GitHub Actions "Run workflow" button -- this is how you demo
+# each failure type live without editing code each time.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      break_mode:
+        description: "Failure to simulate"
+        required: true
+        default: "none"
+        type: choice
+        options:
+          - none
+          - missing_dep
+          - failing_test
+          - bad_config
+          - slow_deploy
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      BREAK_MODE: ${{ github.event.inputs.break_mode || 'none' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Pull code (log marker)
+        run: echo "Pulled commit ${{ github.sha }}"
+
+      - name: Install dependencies (BUILD stage)
+        run: |
+          pip install -r requirements.txt
+          if [ "$BREAK_MODE" = "missing_dep" ]; then
+            echo "BREAK_MODE=missing_dep -> deliberately skipping boto3 install"
+          fi
+
+      - name: Import check (surfaces missing_dep here, like a real build step)
+        run: python -c "import app"
+
+      - name: Run tests (TEST stage)
+        run: pytest tests/ -v
+
+      - name: Simulate deploy (DEPLOY stage)
+        run: |
+          if [ "$BREAK_MODE" = "bad_config" ]; then
+            echo "Simulating missing DATABASE_URL env var at deploy time"
+            unset DATABASE_URL
+            python -c "import os; os.environ.pop('DATABASE_URL', None); exec(open('app.py').read())" || { echo "DEPLOY FAILED: bad_config"; exit 1; }
+          elif [ "$BREAK_MODE" = "slow_deploy" ]; then
+            echo "Simulating a deploy health check that times out..."
+            sleep 5
+            echo "DEPLOY FAILED: health check timeout after 5s (simulated 300s SLA)"
+            exit 1
+          else
+            echo "Deploy OK"
+          fi

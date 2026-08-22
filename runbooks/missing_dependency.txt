@@ -1,0 +1,8 @@
+TITLE: Missing dependency during BUILD/import step
+SYMPTOM: ModuleNotFoundError or ImportError immediately after "Install dependencies" or on `import app`
+COMMON CAUSE: A package is used in code but not listed in requirements.txt (often after a new feature branch adds a new library without updating requirements.txt)
+ROOT CAUSE CHECK: Compare the import statement's package name against requirements.txt. If missing, that's the cause.
+FIX: Add the missing package (with a pinned version) to requirements.txt, commit, and rerun the pipeline.
+EXAMPLE: "ModuleNotFoundError: No module named 'boto3'" -> add `boto3==1.34.0` to requirements.txt
+SEVERITY: Low
+RISK TO AUTO-APPLY FIX: Low -- adding a dependency version is safe to auto-apply and rerun.

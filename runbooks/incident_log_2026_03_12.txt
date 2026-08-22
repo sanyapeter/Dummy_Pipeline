@@ -1,0 +1,9 @@
+INCIDENT LOG
+DATE: 2026-03-12
+PIPELINE: #98
+STAGE: TEST
+ERROR: ModuleNotFoundError: No module named 'boto3'
+ROOT CAUSE: A new feature branch added S3 upload functionality using boto3 but the engineer forgot to update requirements.txt before opening the PR.
+RESOLUTION: Added `boto3==1.34.0` to requirements.txt, rerun passed within 2 minutes.
+TIME TO RESOLVE: 14 minutes (mostly spent locating which file needed the change)
+FOLLOW-UP: Considered adding a pre-commit hook to auto-check for missing imports vs requirements.txt, not yet implemented.

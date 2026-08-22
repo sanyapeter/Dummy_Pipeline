@@ -1,0 +1,7 @@
+TITLE: Missing required environment variable at deploy time
+SYMPTOM: KeyError or similar crash reading os.environ[...] during the DEPLOY stage, app never becomes healthy
+COMMON CAUSE: A new required config value (e.g. DATABASE_URL) was added to the app but not added to the deploy environment's secrets/config
+ROOT CAUSE CHECK: Check which env var name appears in the KeyError, confirm it is not present in the target environment's configured variables.
+FIX: Add the missing environment variable to the deploy environment's config (e.g. via Secrets Manager / Parameter Store / CI secrets), then rerun.
+SEVERITY: High -- this blocks deploys entirely.
+RISK TO AUTO-APPLY FIX: High -- setting environment/config values, especially anything secret-like, should always require human approval before being applied.

@@ -1,0 +1,13 @@
+{
+  "event_id": "evt-006",
+  "pipeline_id": "129",
+  "timestamp": "2026-08-22T15:10:00Z",
+  "source": "github_actions",
+  "status": "PASSED",
+  "stage": "DEPLOY",
+  "error": null,
+  "commit": "f39c221",
+  "changed_files": ["README.md"],
+  "category": "normal",
+  "risky": false
+}

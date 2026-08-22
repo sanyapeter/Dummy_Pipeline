@@ -1,0 +1,12 @@
+TITLE: Production & infrastructure change approval policy
+POLICY: Any pipeline event that touches the following requires human approval before Pipeline Doctor may apply a fix or allow a merge:
+  - IAM policies or roles
+  - Security groups / network ACLs
+  - Production environment variables or secrets
+  - Database schema/migration changes
+  - Any resource tagged "environment: production" in Terraform
+NOT REQUIRED FOR:
+  - Adding/pinning a dependency version in requirements.txt
+  - Non-production test/staging config changes
+  - Increasing a non-production timeout value
+APPROVER: On-call platform engineer or team lead, via the Pipeline Doctor dashboard's Human-in-the-Loop tab.

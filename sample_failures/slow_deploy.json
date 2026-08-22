@@ -1,0 +1,13 @@
+{
+  "event_id": "evt-004",
+  "pipeline_id": "127",
+  "timestamp": "2026-08-22T14:50:19Z",
+  "source": "jenkins",
+  "status": "FAILED",
+  "stage": "DEPLOY",
+  "error": "DEPLOY FAILED: health check timeout after 5s (simulated 300s SLA)",
+  "commit": "d17bb02",
+  "changed_files": [],
+  "category": "direct_failure",
+  "risky": false
+}

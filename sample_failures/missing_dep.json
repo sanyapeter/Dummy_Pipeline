@@ -1,0 +1,13 @@
+{
+  "event_id": "evt-001",
+  "pipeline_id": "124",
+  "timestamp": "2026-08-22T14:03:11Z",
+  "source": "github_actions",
+  "status": "FAILED",
+  "stage": "BUILD",
+  "error": "ModuleNotFoundError: No module named 'boto3'",
+  "commit": "a82f31c",
+  "changed_files": ["requirements.txt", "app.py"],
+  "category": "direct_failure",
+  "risky": false
+}
