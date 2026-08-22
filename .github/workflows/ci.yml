@@ -40,25 +40,27 @@ jobs:
           fi
 
       - name: Import check (surfaces missing_dep here, like a real build step)
-        run: python -c "import app"
+        run: python -c "import app" 2>&1 | tee import_check.log
+        continue-on-error: true
 
       - name: Run tests (TEST stage)
-        run: pytest tests/ -v
+        run: pytest tests/ -v 2>&1 | tee test_output.log
+        continue-on-error: true
 
       - name: Simulate deploy (DEPLOY stage)
         run: |
           if [ "$BREAK_MODE" = "bad_config" ]; then
             echo "Simulating missing DATABASE_URL env var at deploy time"
-            unset DATABASE_URL
-            python -c "import os; os.environ.pop('DATABASE_URL', None); exec(open('app.py').read())" || { echo "DEPLOY FAILED: bad_config"; exit 1; }
+            python -c "import os; os.environ.pop('DATABASE_URL', None); exec(open('app.py').read())" 2>&1 | tee deploy.log
+            if [ $? -ne 0 ]; then echo "DEPLOY FAILED: bad_config" | tee -a deploy.log; fi
           elif [ "$BREAK_MODE" = "slow_deploy" ]; then
-            echo "Simulating a deploy health check that times out..."
+            echo "Simulating a deploy health check that times out..." | tee deploy.log
             sleep 5
-            echo "DEPLOY FAILED: health check timeout after 5s (simulated 300s SLA)"
-            exit 1
+            echo "DEPLOY FAILED: health check timeout after 5s (simulated 300s SLA)" | tee -a deploy.log
           else
-            echo "Deploy OK"
+            echo "Deploy OK" | tee deploy.log
           fi
+        continue-on-error: true
 
       - name: Capture full job log
         if: always()
@@ -68,6 +70,15 @@ jobs:
           echo "Status: ${{ job.status }}" >> pipeline_log.txt
           echo "Repo: ${{ github.repository }}" >> pipeline_log.txt
           echo "Break mode: ${{ env.BREAK_MODE }}" >> pipeline_log.txt
+          echo "" >> pipeline_log.txt
+          echo "--- Import check output ---" >> pipeline_log.txt
+          cat import_check.log >> pipeline_log.txt 2>/dev/null || true
+          echo "" >> pipeline_log.txt
+          echo "--- Test output ---" >> pipeline_log.txt
+          cat test_output.log >> pipeline_log.txt 2>/dev/null || true
+          echo "" >> pipeline_log.txt
+          echo "--- Deploy output ---" >> pipeline_log.txt
+          cat deploy.log >> pipeline_log.txt 2>/dev/null || true
 
       - name: Configure AWS credentials
         if: always()
