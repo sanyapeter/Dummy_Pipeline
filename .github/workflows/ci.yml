@@ -50,7 +50,17 @@ jobs:
       - name: Assemble pipeline_log.txt
         if: always()
         run: |
+          # Overall verdict from the three stages. Written into the header so the
+          # Pipeline Doctor Lambda can tell PASSED from FAILED (it reads `Status:`).
+          if [ "${{ steps.build_check.outcome }}" = "success" ] && \
+             [ "${{ steps.test_check.outcome }}" = "success" ] && \
+             [ "${{ steps.deploy_check.outcome }}" = "success" ]; then
+            STATUS=PASSED
+          else
+            STATUS=FAILED
+          fi
           echo "Pipeline: ${{ github.run_id }}" > pipeline_log.txt
+          echo "Status: $STATUS" >> pipeline_log.txt
           echo "Commit: ${{ github.sha }}" >> pipeline_log.txt
           echo "Repo: ${{ github.repository }}" >> pipeline_log.txt
           echo "Break mode: ${{ env.BREAK_MODE }}" >> pipeline_log.txt
