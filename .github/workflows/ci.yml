@@ -29,56 +29,45 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Pull code (log marker)
-        run: echo "Pulled commit ${{ github.sha }}"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-      - name: Install dependencies (BUILD stage)
-        run: |
-          pip install -r requirements.txt
-          if [ "$BREAK_MODE" = "missing_dep" ]; then
-            echo "BREAK_MODE=missing_dep -> deliberately skipping boto3 install"
-          fi
-
-      - name: Import check (surfaces missing_dep here, like a real build step)
-        run: python -c "import app" 2>&1 | tee import_check.log
+      - name: BUILD - import check
+        id: build_check
         continue-on-error: true
+        run: python -c "import app" > build.log 2>&1
 
-      - name: Run tests (TEST stage)
-        run: pytest tests/ -v 2>&1 | tee test_output.log
+      - name: TEST - pytest
+        id: test_check
         continue-on-error: true
+        run: python -m pytest tests/ -v > test.log 2>&1
 
-      - name: Simulate deploy (DEPLOY stage)
-        run: |
-          if [ "$BREAK_MODE" = "bad_config" ]; then
-            echo "Simulating missing DATABASE_URL env var at deploy time"
-            python -c "import os; os.environ.pop('DATABASE_URL', None); exec(open('app.py').read())" 2>&1 | tee deploy.log
-            if [ $? -ne 0 ]; then echo "DEPLOY FAILED: bad_config" | tee -a deploy.log; fi
-          elif [ "$BREAK_MODE" = "slow_deploy" ]; then
-            echo "Simulating a deploy health check that times out..." | tee deploy.log
-            sleep 5
-            echo "DEPLOY FAILED: health check timeout after 5s (simulated 300s SLA)" | tee -a deploy.log
-          else
-            echo "Deploy OK" | tee deploy.log
-          fi
+      - name: DEPLOY - simulated deploy
+        id: deploy_check
         continue-on-error: true
+        run: python deploy_check.py > deploy.log 2>&1
 
-      - name: Capture full job log
+      - name: Assemble pipeline_log.txt
         if: always()
         run: |
           echo "Pipeline: ${{ github.run_id }}" > pipeline_log.txt
           echo "Commit: ${{ github.sha }}" >> pipeline_log.txt
-          echo "Status: ${{ job.status }}" >> pipeline_log.txt
           echo "Repo: ${{ github.repository }}" >> pipeline_log.txt
           echo "Break mode: ${{ env.BREAK_MODE }}" >> pipeline_log.txt
           echo "" >> pipeline_log.txt
-          echo "--- Import check output ---" >> pipeline_log.txt
-          cat import_check.log >> pipeline_log.txt 2>/dev/null || true
+          echo "--- BUILD ---" >> pipeline_log.txt
+          cat build.log >> pipeline_log.txt
           echo "" >> pipeline_log.txt
-          echo "--- Test output ---" >> pipeline_log.txt
-          cat test_output.log >> pipeline_log.txt 2>/dev/null || true
+          echo "--- TEST ---" >> pipeline_log.txt
+          cat test.log >> pipeline_log.txt
           echo "" >> pipeline_log.txt
-          echo "--- Deploy output ---" >> pipeline_log.txt
-          cat deploy.log >> pipeline_log.txt 2>/dev/null || true
+          echo "--- DEPLOY ---" >> pipeline_log.txt
+          cat deploy.log >> pipeline_log.txt
+          echo "" >> pipeline_log.txt
+          echo "Build outcome: ${{ steps.build_check.outcome }}" >> pipeline_log.txt
+          echo "Test outcome: ${{ steps.test_check.outcome }}" >> pipeline_log.txt
+          echo "Deploy outcome: ${{ steps.deploy_check.outcome }}" >> pipeline_log.txt
+          cat pipeline_log.txt
 
       - name: Configure AWS credentials
         if: always()
@@ -93,3 +82,14 @@ jobs:
         run: |
           aws s3 cp pipeline_log.txt \
             s3://${{ secrets.AWS_S3_BUCKET }}/logs/${{ github.run_id }}.txt
+
+      - name: Fail the job if any stage failed
+        if: always()
+        run: |
+          if [ "${{ steps.build_check.outcome }}" = "failure" ] || \
+             [ "${{ steps.test_check.outcome }}" = "failure" ] || \
+             [ "${{ steps.deploy_check.outcome }}" = "failure" ]; then
+            echo "One or more stages failed - see the log above / in S3."
+            exit 1
+          fi
+          echo "All stages passed."
